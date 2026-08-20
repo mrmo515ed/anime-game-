@@ -197,7 +197,19 @@
         '<div class="bar" style="height:18px;margin:14px 0;"><div style="width:' + pct + '%;background:linear-gradient(90deg,#ff2e5b,#ff8a00);border-radius:9px;"></div></div>' +
         '<div style="font-size:12px;opacity:.7;">' + Math.floor(b.hp).toLocaleString() + ' / ' + b.maxhp.toLocaleString() + ' · هُزم ' + b.killed + ' مرة</div>' +
         '<button class="btn red block" style="margin-top:16px;" onclick="window.__alubAttackBoss(' + dmg + ')">⚔️ اهجم (' + dmg.toLocaleString() + ' ضرر)</button>' +
-        '<small style="display:block;margin-top:10px;opacity:.5;">كل اللاعبين يهاجمون نفس الزعيم معًا</small></div>';
+        '<small style="display:block;margin-top:10px;opacity:.5;">كل اللاعبين يهاجمون نفس الزعيم معًا</small>' +
+        '<div id="alubBossTop" style="text-align:right;margin-top:18px;"><div class="sec-title">🏆 أعلى المتصدرين بالضرر</div><div class="empty">جارٍ التحميل…</div></div></div>';
+      // ترتيب الضرر
+      api('/api/boss/top').then(function (rr) {
+        var el = document.getElementById('alubBossTop');
+        if (!el) return;
+        var list = (rr.ok && rr.list) || [];
+        el.innerHTML = '<div class="sec-title">🏆 أعلى المتصدرين بالضرر</div>' + (list.length ? list.map(function (x, i) {
+          return '<div class="kv" style="padding:8px 0;"><span style="display:flex;gap:8px;align-items:center;">' +
+            '<b style="color:#ffc844;">#' + (i + 1) + '</b>' + (x.name || 'لاعب') + '</span>' +
+            '<b style="color:#ff8a00;">' + x.total.toLocaleString() + '</b></div>';
+        }).join('') : '<div class="empty">لا يوجد ضرر مسجّل بعد</div>');
+      });
     });
   }
   window.__alubAttackBoss = function (dmg) {
@@ -287,6 +299,104 @@
     { id: 'a_chars10', t: 'جامع الأبطال', d: 'اجمع 10 أبطال', key: 'charsOwned', goal: 10, r: { gems: 250 } }
   ];
 
+  /* =====================================================================
+     (3) ربط PvP + النقابات + البطولات بالسيرفر (مع تراجع محلي آمن)
+     ===================================================================== */
+  function wireSocial() {
+    if (!serverReady()) return;
+
+    // --- PvP: نشر ملفك القتالي على السيرفر ---
+    try {
+      if (window.PVP && typeof window.PVP.publish === 'function') {
+        var oPublish = window.PVP.publish;
+        window.PVP.publish = function () {
+          oPublish.call(window.PVP);
+          var me = window.G;
+          var profile = {
+            lv: me.player.level, rank: (me.pvp && me.pvp.rank) || 1000,
+            power: (typeof window.teamPower === 'function' ? window.teamPower() : 0),
+            vip: !!me.player.vip,
+            team: (me.team || []).slice(0, 4).map(function (id) {
+              return { id: id, lv: me.chars[id].lv, star: me.chars[id].star, w: me.chars[id].weapon, sk: me.chars[id].skillLv };
+            })
+          };
+          api('/api/pvp/publish', { method: 'POST', body: { profile: profile } });
+        };
+      }
+    } catch (e) {}
+
+    // --- النقابات: مزامنة مع السيرفر ---
+    try {
+      if (window.GUILD) {
+        var oRenderGuild = window.GUILD.render;
+        // عند عرض النقابات، اجلب القائمة الحقيقية كقسم إضافي
+        window.GUILD.render = function () {
+          oRenderGuild.call(window.GUILD);
+          api('/api/guilds').then(function (r) {
+            var list = (r.ok && r.list) || [];
+            if (!list.length) return;
+            var host = document.getElementById('guildList') || document.querySelector('#mBody');
+            if (!host) return;
+            var box = document.createElement('div');
+            box.style.marginTop = '14px';
+            box.innerHTML = '<div class="sec-title">🌐 نقابات أونلاين (' + list.length + ')</div>' +
+              list.map(function (g) {
+                return '<div class="stage-node"><div class="sn-n">' + (g.tag || '🏠').slice(0, 2) + '</div>' +
+                  '<div style="flex:1;"><b>' + g.name + '</b><small style="display:block;opacity:.6;">' + (g.members || []).length + ' عضو</small></div>' +
+                  '<button class="btn xs cyan" onclick="window.__alubJoinGuild(\'' + g.id + '\')">انضم</button></div>';
+              }).join('');
+            host.appendChild(box);
+          });
+        };
+        window.__alubJoinGuild = function (gid) {
+          api('/api/guilds', { method: 'POST', body: { action: 'join', guildId: gid } }).then(function (r) {
+            if (r.ok) window.toast && window.toast('انضممت للنقابة (أونلاين)', 'good');
+            else window.toast && window.toast('تعذر الانضمام: ' + (r.error || ''), 'bad');
+          });
+        };
+      }
+    } catch (e) {}
+
+    // --- البطولات: مشاركة حقيقية ---
+    window.__alubJoinTourney = function () {
+      api('/api/tournament/join', { method: 'POST', body: { power: (typeof window.teamPower === 'function' ? window.teamPower() : 0) } })
+        .then(function (r) {
+          if (r.ok) window.toast && window.toast('تم تسجيلك في البطولة! 🏆', 'good');
+          else window.toast && window.toast('تعذر التسجيل: ' + (r.error || ''), 'bad');
+        });
+    };
+    window.__alubShowTourney = function () {
+      var title = '🏆 البطولات الأسبوعية';
+      window.UI.openModal(title, '<div class="empty">جارٍ التحميل…</div>');
+      api('/api/tournament').then(function (r) {
+        var t = r.t;
+        if (!t) { document.getElementById('mBody').innerHTML = '<div class="empty">تعذر التحميل.</div>'; return; }
+        var parts = (t.participants || []).sort(function (a, b) { return b.power - a.power; });
+        document.getElementById('mBody').innerHTML =
+          '<div style="text-align:center;margin-bottom:14px;"><h3 style="font-size:20px;">' + t.name + '</h3>' +
+          '<div class="pill" style="margin:8px;">' + parts.length + ' مشارك · ' + (t.status === 'open' ? 'التسجيل مفتوح' : 'مغلق') + '</div>' +
+          '<button class="btn gold" onclick="window.__alubJoinTourney()">اشترك الآن (مجانًا)</button></div>' +
+          (parts.length ? parts.map(function (p, i) {
+            return '<div class="kv" style="padding:9px 0;"><span style="display:flex;gap:8px;align-items:center;">' +
+              '<b style="color:#ffc844;">#' + (i + 1) + '</b>' + (p.name || 'لاعب') + '</span>' +
+              '<b style="color:#a24bff;">' + (p.power || 0).toLocaleString() + ' قوة</b></div>';
+          }).join('') : '<div class="empty">كن أول من يسجّل!</div>');
+      });
+    };
+
+    // توجيه زر البطولة للحقيقي
+    if (window.ExtendedFeatures) {
+      window.ExtendedFeatures.showTournaments = window.__alubShowTourney;
+    }
+    if (window.UI && window.UI.go) {
+      var oGo2 = window.UI.go;
+      window.UI.go = function (s) {
+        if (s === 'tourney' || s === 'tournament') { window.__alubShowTourney(); return; }
+        oGo2.apply(window.UI, arguments);
+      };
+    }
+  }
+
   /* ---------- التثبيت بعد اكتمال تحميل اللعبة ---------- */
   function boot() {
     // تأكد من وجود حقل الإنجازات
@@ -316,6 +426,11 @@
         oGo.apply(window.UI, arguments);
       };
     }
+
+    /* ---------- ربط PvP + النقابات + البطولات بالسيرفر ---------- */
+    wireSocial();
+
+    // سحب البيانات الحقيقية من الخادم
 
     // سحب البيانات الحقيقية من الخادم
     pullFromServer();

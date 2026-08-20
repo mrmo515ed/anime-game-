@@ -227,10 +227,69 @@ route('POST', '/api/boss/attack', (req, body) => {
   const damage = Math.max(1, Math.floor(Number(body.damage) || 0));
   const b = bossState();
   b.hp = Math.max(0, b.hp - damage);
+  // track damage for ranking
+  const dmg = store.db.bossDamage;
+  if (!dmg[p.id]) dmg[p.id] = { name: p.name, avatar: p.avatar, total: 0 };
+  dmg[p.id].total += damage;
   const defeated = b.hp <= 0;
-  if (defeated) bossDefeat();
-  else store.persist();
+  if (defeated) { bossDefeat(); store.db.bossDamage = {}; }
+  store.persist();
   return json(req.res, 200, { ok: true, hp: b.hp, maxhp: b.maxhp, defeated, level: b.level, name: b.def.name, emoji: b.def.emoji, yourDamage: damage });
+});
+
+route('GET', '/api/boss/top', (req) => {
+  const list = Object.values(store.db.bossDamage)
+    .sort((a, b) => b.total - a.total).slice(0, 20);
+  return json(req.res, 200, { ok: true, list });
+});
+
+/* ---------- PvP matchmaking pool ---------- */
+route('POST', '/api/pvp/publish', (req, body) => {
+  const user = auth(req, body);
+  if (!user) return json(req.res, 401, { ok: false, error: 'unauthorized' });
+  const p = getPlayer(user);
+  store.db.pvp[p.id] = Object.assign({
+    id: p.id, name: p.name, username: p.username, avatar: p.avatar, at: Date.now()
+  }, body.profile || {});
+  // prune stale entries
+  const now = Date.now();
+  for (const k in store.db.pvp) if (now - (store.db.pvp[k].at || 0) > 86400000) delete store.db.pvp[k];
+  store.persist();
+  return json(req.res, 200, { ok: true });
+});
+
+route('GET', '/api/pvp/find', (req, body, q) => {
+  const uid = q.get('uid');
+  const list = Object.values(store.db.pvp).filter(x => String(x.id) !== String(uid));
+  return json(req.res, 200, { ok: true, list });
+});
+
+/* ---------- Tournament (weekly bracket) ---------- */
+function tournamentState() {
+  if (!store.db.tournament) {
+    store.db.tournament = { id: 'w' + new Date().getFullYear() + '-W' + weekNumber(), name: 'بطولة زعماء الأنمي', participants: [], status: 'open', startedAt: Date.now() };
+    store.persist();
+  }
+  return store.db.tournament;
+}
+function weekNumber() {
+  const d = new Date(); const on = new Date(d.getFullYear(), 0, 1);
+  return Math.ceil((((d - on) / 86400000) + on.getDay() + 1) / 7);
+}
+
+route('GET', '/api/tournament', (req) => json(req.res, 200, { ok: true, t: tournamentState() }));
+
+route('POST', '/api/tournament/join', (req, body) => {
+  const user = auth(req, body);
+  if (!user) return json(req.res, 401, { ok: false, error: 'unauthorized' });
+  const p = getPlayer(user);
+  const t = tournamentState();
+  if (t.status !== 'open') return json(req.res, 400, { ok: false, error: 'closed' });
+  if (!t.participants.some(x => x.id === p.id)) {
+    t.participants.push({ id: p.id, name: p.name, avatar: p.avatar, power: Number(body.power) || 0, wins: 0 });
+    store.persist();
+  }
+  return json(req.res, 200, { ok: true, t });
 });
 
 route('POST', '/api/stars', async (req, body) => {

@@ -12,7 +12,10 @@ const EMPTY = {
   players: {},          // id -> { id, name, username, avatar, data, updatedAt, lastSeen }
   chat: [],             // [{ id, name, username, text, at }]
   guilds: [],           // [{ id, name, tag, desc, leader, members: [ids], createdAt }]
-  boss: null            // shared world boss state
+  boss: null,           // shared world boss state
+  bossDamage: {},       // playerId -> { name, total }  (current boss cycle)
+  pvp: {},              // playerId -> published combat profile
+  tournament: null      // current tournament bracket
 };
 
 let db = null;
