@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05030f">
+<meta name="description" content="Anime Legends: Ultimate Battle — لعبة RPG أنمي: اجمع الأبطال، طوّر المهارات، واسحق خصومك في معارك سينمائية.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta property="og:title" content="⚔️ Anime Legends: Ultimate Battle">
+<meta property="og:description" content="اجمع الأساطير · طوّر أبطالك · اسحق خصومك">
+<meta property="og:type" content="website">
+<title>Anime Legends: Ultimate Battle</title>
+
+<script>
+window.addEventListener('error', function(event) {
+  console.warn("Global Error Caught:", event.message, event.filename, event.lineno, event.colno, event.error);
+});
+</script>
+<!-- ضروري: يجعل بيانات المستخدم متاحة فورًا داخل تيليجرام -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+
+<!-- تحميل مسبق لملف اللعبة لتقليل زمن الانتقال -->
+<link rel="prefetch" href="/assets/game-C84o46UK.html" as="document">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:'Cairo',system-ui,sans-serif;color:#e9eefc;user-select:none;
+  display:grid;place-items:center;text-align:center;
+  background:
+    radial-gradient(circle at 18% 8%, #2b0f52 0%, transparent 55%),
+    radial-gradient(circle at 84% 88%, #06304d 0%, transparent 55%),
+    linear-gradient(160deg,#05030f 0%,#0b0720 45%,#100628 100%);
+}
+/* ===== خلفية متحركة ===== */
+#bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.grid-fx{position:absolute;inset:-50%;opacity:.5;
+  background-image:linear-gradient(rgba(0,240,255,.07) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(162,75,255,.07) 1px,transparent 1px);
+  background-size:60px 60px;transform:perspective(400px) rotateX(62deg);
+  animation:grid 12s linear infinite}
+@keyframes grid{to{background-position:0 60px,60px 0}}
+.orb{position:absolute;border-radius:50%;filter:blur(64px);opacity:.34;animation:float 14s ease-in-out infinite}
+.o1{width:300px;height:300px;background:#ff2e97;top:-70px;left:-70px}
+.o2{width:340px;height:340px;background:#00f0ff;bottom:-90px;right:-90px;animation-delay:-5s}
+.o3{width:230px;height:230px;background:#a24bff;top:42%;right:18%;animation-delay:-9s}
+@keyframes float{0%,100%{transform:translate(0,0) scale(1)}
+  33%{transform:translate(42px,-52px) scale(1.16)}66%{transform:translate(-32px,32px) scale(.9)}}
+#stars{position:absolute;inset:0;width:100%;height:100%}
+
+/* ===== المحتوى ===== */
+main{position:relative;z-index:2;padding:24px;width:min(420px,92vw)}
+.crest{font-size:60px;filter:drop-shadow(0 0 22px #ff2e97);animation:bob 3s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-14px) rotate(4deg)}}
+.logo{
+  font-family:'Orbitron',sans-serif;font-weight:900;line-height:.94;letter-spacing:2px;
+  font-size:clamp(30px,10.5vw,54px);margin-top:6px;
+  background:linear-gradient(180deg,#fff,#00f0ff 45%,#a24bff 76%,#ff2e97);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 22px rgba(162,75,255,.85));animation:pulse 3s ease-in-out infinite}
+@keyframes pulse{0%,100%{filter:drop-shadow(0 0 16px rgba(162,75,255,.7))}
+  50%{filter:drop-shadow(0 0 38px rgba(0,240,255,.9))}}
+.slash{width:min(320px,78vw);height:3px;margin:15px auto;border-radius:3px;
+  background:linear-gradient(90deg,transparent,#ff2e97,#00f0ff,transparent);animation:sl 2.4s ease-in-out infinite}
+@keyframes sl{0%,100%{transform:scaleX(.4);opacity:.5}50%{transform:scaleX(1);opacity:1}}
+.sub{font-family:'Orbitron',sans-serif;font-size:clamp(11px,3.6vw,16px);letter-spacing:7px;color:#ffc844;
+  text-shadow:0 0 14px rgba(255,200,68,.85)}
+
+/* بطاقة المستخدم */
+.who{display:none;align-items:center;gap:11px;margin:20px auto 0;padding:11px 14px;width:100%;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:18px;
+  backdrop-filter:blur(14px);animation:up .5s cubic-bezier(.2,1.4,.4,1)}
+.who.on{display:flex}
+@keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.pfp{width:46px;height:46px;border-radius:50%;flex:0 0 auto;overflow:hidden;display:grid;place-items:center;
+  font-size:22px;background:linear-gradient(135deg,#0088cc,#00f0ff);border:2px solid rgba(255,255,255,.3)}
+.pfp img{width:100%;height:100%;object-fit:cover}
+.who .tx{flex:1;min-width:0;text-align:right}
+.who b{font-size:14px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who small{font-size:11px;opacity:.7}
+.tag{font-size:9px;font-weight:900;padding:3px 9px;border-radius:20px;flex:0 0 auto;
+  background:linear-gradient(135deg,#ffb020,#ff2e5b);box-shadow:0 0 12px rgba(255,176,32,.6)}
+
+/* شريط التحميل */
+.barwrap{margin:22px auto 8px;width:100%;height:7px;border-radius:9px;overflow:hidden;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14)}
+.bar{height:100%;width:0;border-radius:9px;transition:width .45s cubic-bezier(.2,.9,.3,1);
+  background:linear-gradient(90deg,#a24bff,#00f0ff,#ff2e97);box-shadow:0 0 16px #00f0ff}
+.status{font-size:11.5px;opacity:.72;letter-spacing:.5px;min-height:18px}
+
+/* زر يدوي */
+.btn{display:none;margin:16px auto 0;padding:14px 30px;border:none;border-radius:15px;cursor:pointer;
+  font-family:'Cairo',sans-serif;font-weight:900;font-size:16px;color:#fff;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,#a24bff,#ff2e97);box-shadow:0 8px 26px rgba(162,75,255,.5)}
+.btn.on{display:inline-block;animation:up .4s}
+.btn:active{transform:scale(.94)}
+.btn::after{content:'';position:absolute;top:0;left:-120%;width:60%;height:100%;transform:skewX(-22deg);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);animation:shine 3s infinite}
+@keyframes shine{0%{left:-120%}45%,100%{left:170%}}
+.hint{margin-top:14px;font-size:10.5px;opacity:.42;line-height:1.9}
+.foot{position:fixed;bottom:14px;left:0;right:0;z-index:2;font-family:'Orbitron',sans-serif;
+  font-size:9.5px;letter-spacing:2px;opacity:.32}
+.err{display:none;margin-top:14px;padding:11px 14px;border-radius:14px;font-size:12px;line-height:1.8;
+  background:rgba(255,46,91,.14);border:1px solid rgba(255,46,91,.5)}
+.err.on{display:block}
+
+@media(min-width:700px){
+  body { background: #000; display:flex; justify-content:center; align-items:center; }
+  #bg { max-width:480px; margin:0 auto; border-left:1px solid rgba(255,255,255,0.1); border-right:1px solid rgba(255,255,255,0.1); }
+  main { max-width:480px; width:100%; margin:0 auto; position:relative; z-index:1; }
+  .foot { max-width:480px; margin:0 auto; left:50%; transform:translateX(-50%); }
+}
+
+/* HARMONIZED DESIGN PATCH */
+:root {
+  --neon-cyan: #00f0ff;
+  --neon-pink: #ff2e97;
+  --neon-purple: #a24bff;
+  --neon-gold: #ffc844;
+  --neon-green: #33ff9e;
+  --bg-0: #05030f;
+  --bg-1: #0b0720;
+  --glass: rgba(255, 255, 255, 0.05);
+  --glass-br: rgba(255, 255, 255, 0.12);
+}
+* { font-family: 'Cairo', system-ui, sans-serif; }
+.font-o, h1, h2, h3, .sec-title, .logo, .crest { font-family: 'Orbitron', 'Cairo', sans-serif !important; }
+
+/* Buttons Unified */
+.btn {
+  border-radius: 12px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.5px !important;
+  transition: all 0.2s cubic-bezier(0.2, 0.9, 0.3, 1) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+}
+.btn:not(.ghost):not(.gold):not(.cyan) {
+  background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink)) !important;
+  box-shadow: 0 4px 15px rgba(162,75,255,0.3) !important;
+}
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.02) !important;
+  filter: brightness(1.15) !important;
+}
+.btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.97) !important;
+}
+.btn.gold { background: linear-gradient(135deg, #d4af37, #ffc844) !important; color:#000 !important; box-shadow: 0 4px 15px rgba(255,200,68,0.3) !important; border:none!important; }
+.btn.cyan { background: linear-gradient(135deg, var(--neon-cyan), #0088cc) !important; color:#fff !important; box-shadow: 0 4px 15px rgba(0,240,255,0.3) !important; border:none!important; }
+.btn.ghost { background: var(--glass) !important; border: 1px solid var(--glass-br) !important; box-shadow: none !important; color:#fff !important;}
+
+/* Cards & Glass Unified */
+.glass, .card, .kv, .adm-row, .shop-item {
+  border-radius: 16px !important;
+  background: var(--glass) !important;
+  border: 1px solid var(--glass-br) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  transition: transform 0.2s, border-color 0.2s !important;
+}
+.glass:hover, .card:hover, .shop-item:hover {
+  border-color: rgba(255,255,255,0.2) !important;
+}
+
+/* Modals Unified */
+.sheet {
+  border-radius: 28px 28px 0 0 !important;
+  border-top: 1px solid rgba(255,255,255,0.2) !important;
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.8) !important;
+}
+.modal-box {
+  border-radius: 20px !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.8) !important;
+  background: linear-gradient(160deg, #100a20, #0a0615) !important;
+}
+
+/* Typography Harmony */
+.sec-title {
+  font-size: 14px !important;
+  color: var(--neon-cyan) !important;
+  text-shadow: 0 0 10px rgba(0,240,255,0.4) !important;
+  margin-top: 15px !important;
+  margin-bottom: 10px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+}
+
+</style>
+</head>
+<body>
+
+<div id="bg">
+  <div class="grid-fx"></div>
+  <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+  <canvas id="stars"></canvas>
+</div>
+
+<main>
+  <div class="crest">⚔️</div>
+  <div class="logo">ANIME<br>LEGENDS</div>
+  <div class="slash"></div>
+  <div class="sub">ULTIMATE BATTLE</div>
+
+  <div class="who" id="who">
+    <div class="pfp" id="pfp">✈️</div>
+    <div class="tx"><b id="uname">—</b><small id="uhandle">—</small></div>
+    <span class="tag" id="utag" style="display:none">ADMIN</span>
+  </div>
+
+  <div class="barwrap"><div class="bar" id="bar"></div></div>
+  <div class="status" id="status">جارٍ التهيئة…</div>
+
+  <button class="btn" id="go">▶ ابدأ اللعب</button>
+
+  <div class="err" id="err"></div>
+
+  <div class="hint" id="hint">
+    💡 للحصول على حسابك الحقيقي وحفظ تقدّمك — افتح اللعبة من داخل بوت Telegram.
+  </div>
+</main>
+
+<div class="foot">ANIME LEGENDS · ULTIMATE BATTLE · V1.0</div>
+
+<script>
+(function(){
+  'use strict';
+  var TARGET = 'game.html';
+  var ROOT_ADMINS = ['mr_mo515ed'];
+  var ROOT_ADMIN_IDS = ['6748280553'];
+
+  var $ = function(id){ return document.getElementById(id); };
+  var bar = $('bar'), status = $('status'), goBtn = $('go');
+  var pct = 0, jumped = false;
+
+  function setBar(v, msg){
+    pct = Math.max(pct, v);
+    bar.style.width = pct + '%';
+    if (msg) status.textContent = msg;
+  }
+
+  /* ---------- 1) تهيئة Telegram Web App ---------- */
+  var tg = null, user = null, inTG = false, canSend = false;
+  try {
+    tg = window.Telegram.WebApp;   // المكتبة محمّلة في <head>
+    tg.ready();                    // إعلام تيليجرام أن التطبيق جاهز
+    tg.expand();                   // توسيع الشاشة لكامل الارتفاع
+
+    if (tg.setHeaderColor)        tg.setHeaderColor('#05030f');
+    if (tg.setBackgroundColor)    tg.setBackgroundColor('#05030f');
+    if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
+
+    if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+      inTG = true;
+      user = tg.initDataUnsafe.user;
+      canSend = (typeof tg.sendData === 'function');
+    }
+  } catch (e) { tg = null; }
+
+  // متاح للعبة بعد الانتقال
+  window.tg = tg;
+
+  setBar(20, inTG ? 'تم الاتصال بـ Telegram ✅' : 'وضع المتصفح — بلا حساب Telegram');
+
+  /* ---------- 2) عرض بيانات المستخدم ---------- */
+  if (user) {
+    var name = ((user.first_name || '') + ' ' + (user.last_name || '')).trim() || ('لاعب ' + user.id);
+    var handle = user.username ? '@' + user.username : 'ID: ' + user.id;
+    $('uname').textContent = name;
+    $('uhandle').textContent = handle;
+    if (user.photo_url) {
+      $('pfp').innerHTML = '<img alt="" src="' + String(user.photo_url).replace(/"/g,'') + '">';
+    }
+    if ((user.username && ROOT_ADMINS.indexOf(String(user.username).toLowerCase()) >= 0) || ROOT_ADMIN_IDS.indexOf(String(user.id)) >= 0) {
+      $('utag').style.display = 'inline-block';
+      $('utag').textContent = '🛡 ADMIN';
+    }
+    $('who').classList.add('on');
+    $('hint').textContent = 'مرحبًا بعودتك — سيتم تحميل حسابك تلقائيًا.';
+    setBar(45, 'تم التعرّف على حسابك 👤');
+  } else {
+    setBar(45, 'تجهيز حساب محلي…');
+  }
+
+  /* ---------- 3) فحص توفّر ملف اللعبة ---------- */
+  function checkGame(){
+    return new Promise(function(resolve){
+      try {
+        var x = new XMLHttpRequest();
+        x.open('HEAD', TARGET, true);
+        x.timeout = 6000;
+        x.onload  = function(){ resolve(x.status >= 200 && x.status < 400); };
+        x.onerror = function(){ resolve(null); };   // null = تعذّر الفحص (file://) فنكمل
+        x.ontimeout = function(){ resolve(null); };
+        x.send();
+      } catch (e) { resolve(null); }
+    });
+  }
+
+  /* ---------- 4) الانتقال مع الحفاظ على بيانات Telegram ---------- */
+  function launch(){
+    if (jumped) return;
+    jumped = true;
+    setBar(100, 'انطلق! ⚔️');
+    // مهم جدًا: Telegram يمرّر initData في الـ hash — يجب نقله كما هو
+    var url = TARGET + (location.search || '') + (location.hash || '');
+    try {
+      if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+    } catch (e) {}
+    setTimeout(function(){ location.replace(url); }, 260);
+  }
+
+  goBtn.addEventListener('click', launch);
+
+  /* ---------- 5) تسلسل الإقلاع ---------- */
+  var steps = [
+    [60,  'تحميل قاعدة الأبطال…'],
+    [74,  'تجهيز محرك القتال…'],
+    [86,  'تحميل المؤثرات البصرية…'],
+    [95,  'اللمسات الأخيرة…']
+  ];
+  var i = 0;
+  var tick = setInterval(function(){
+    if (i < steps.length) { setBar(steps[i][0], steps[i][1]); i++; }
+    else clearInterval(tick);
+  }, 340);
+
+  checkGame().then(function(ok){
+    if (ok === false) {
+      clearInterval(tick);
+      setBar(100, 'تعذّر العثور على ملف اللعبة');
+      status.textContent = '';
+      $('err').classList.add('on');
+      $('err').innerHTML = '⚠️ لم يتم العثور على <b>game.html</b><br>' +
+        'تأكّد أن الملفين <b>index.html</b> و <b>game.html</b> في نفس المجلد على الاستضافة.';
+      goBtn.textContent = '🔄 إعادة المحاولة';
+      goBtn.classList.add('on');
+      goBtn.onclick = function(){ location.reload(); };
+      return;
+    }
+    // جاهز — انطلاق تلقائي + زر احتياطي
+    setTimeout(launch, 1500);
+    setTimeout(function(){ if (!jumped) goBtn.classList.add('on'); }, 2600);
+  });
+
+  // شبكة أمان: لو تعطّل أي شيء، أظهر الزر اليدوي
+  setTimeout(function(){ if (!jumped) goBtn.classList.add('on'); }, 5000);
+
+  /* ---------- 6) حقل النجوم ---------- */
+  (function stars(){
+    var cv = $('stars'), cx = cv.getContext('2d'), W, H, ps = [];
+    var COLORS = ['#00f0ff','#ff2e97','#a24bff','#ffc844','#ffffff'];
+    function resize(){
+      W = cv.width = innerWidth; H = cv.height = innerHeight;
+      var n = Math.min(80, Math.round(W * H / 17000));
+      ps = [];
+      for (var k = 0; k < n; k++) ps.push({
+        x: Math.random()*W, y: Math.random()*H,
+        r: Math.random()*1.7 + .3, s: Math.random()*.34 + .06,
+        a: Math.random()*6.28, c: COLORS[Math.floor(Math.random()*COLORS.length)]
+      });
+    }
+    resize(); addEventListener('resize', resize);
+    (function loop(){
+      cx.clearRect(0,0,W,H);
+      for (var k = 0; k < ps.length; k++){
+        var p = ps[k];
+        p.y -= p.s; p.a += .022;
+        if (p.y < -5){ p.y = H + 5; p.x = Math.random()*W; }
+        cx.globalAlpha = .32 + Math.sin(p.a)*.34;
+        cx.fillStyle = p.c; cx.shadowBlur = 8; cx.shadowColor = p.c;
+        cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, 6.283); cx.fill();
+      }
+      cx.globalAlpha = 1; cx.shadowBlur = 0;
+      requestAnimationFrame(loop);
+    })();
+  })();
+})();
+</script>
+</body>
+</html>
